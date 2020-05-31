@@ -29,9 +29,18 @@
 #include <queue>            // std::queue
 #include <fstream>          // std::ofstream
 #include <time.h>           // time, localtime
+
+#if defined(_WIN32) | defined(_WIN64)
+#include <windows.h>
+#define OS_WIN
+#else
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#define OS_UNIX
+#endif
+
+
 
 
 
@@ -307,10 +316,22 @@ namespace logger {
 void logger::BindLogDirectory(const char* s) {
     
     struct stat st = {0};   // structure for holding stat
-    
+#ifdef OS_UNIX
     if (stat(s, &st) == -1) {
         throw logger::error("path is invalid");
     }
+#endif // OS_UNIX
+
+#ifdef OS_WIN
+
+	WIN32_FIND_DATA data;
+	HANDLE hFile = FindFirstFile(s, &data);
+
+	if (hFile == INVALID_HANDLE_VALUE) // directory doesn't exist
+		throw logger::error("path is invalid");
+
+#endif // OS_WIN
+
     
     logger::log_directory_ = s;
 }
@@ -356,6 +377,8 @@ bool logger::FileLog(const char* PATH, const char* FILENAME, int LINE, const cha
     std::queue<std::string> queue;  // queue with variable converted to string
     
     
+
+#ifdef OS_UNIX
     int res;
     
     if (stat(directory.c_str(), &st) == -1) {
@@ -378,6 +401,55 @@ bool logger::FileLog(const char* PATH, const char* FILENAME, int LINE, const cha
             throw logger::error("cannot create directory");
         }
     }
+#endif // OS_UNIX
+
+#ifdef OS_WIN
+	if (CreateDirectory(directory.c_str(), NULL))
+	{
+		// Directory created
+	}
+	else if (ERROR_ALREADY_EXISTS == GetLastError())
+	{
+		// Directory already exists
+	}
+	else
+	{
+		throw logger::error("cannot create directory");
+	}
+
+
+	if (CreateDirectory(year_directory.c_str(), NULL))
+	{
+		// Directory created
+	}
+	else if (ERROR_ALREADY_EXISTS == GetLastError())
+	{
+		// Directory already exists
+	}
+	else
+	{
+		throw logger::error("cannot create directory");
+	}
+
+
+	if (CreateDirectory(month_directory.c_str(), NULL))
+	{
+		// Directory created
+	}
+	else if (ERROR_ALREADY_EXISTS == GetLastError())
+	{
+		// Directory already exists
+	}
+	else
+	{
+		throw logger::error("cannot create directory");
+	}
+
+#endif // OS_WIN
+
+
+
+
     
     
     std::ofstream file_out(filename, std::ios::app);
@@ -475,28 +547,74 @@ bool logger::FileLog(const char* PATH, const char* FILENAME, int LINE, const cha
     std::to_string(cur_time->tm_year + 1900) + ".log";
     
     
-    int res;
-    
-    if (stat(directory.c_str(), &st) == -1) {
-        res = mkdir(directory.c_str(), 0700);
-        if(res) {
-            throw logger::error("cannot create directory");
-        }
-    }
-    
-    if (stat(year_directory.c_str(), &st) == -1) {
-        res = mkdir(year_directory.c_str(), 0700);
-        if(res) {
-            throw logger::error("cannot create directory");
-        }
-    }
-    
-    if (stat(month_directory.c_str(), &st) == -1) {
-        res = mkdir(month_directory.c_str(), 0700);
-        if(res) {
-            throw logger::error("cannot create directory");
-        }
-    }
+#ifdef OS_UNIX
+	int res;
+
+	if (stat(directory.c_str(), &st) == -1) {
+		res = mkdir(directory.c_str(), 0700);
+		if (res) {
+			throw logger::error("cannot create directory");
+		}
+	}
+
+	if (stat(year_directory.c_str(), &st) == -1) {
+		res = mkdir(year_directory.c_str(), 0700);
+		if (res) {
+			throw logger::error("cannot create directory");
+		}
+	}
+
+	if (stat(month_directory.c_str(), &st) == -1) {
+		res = mkdir(month_directory.c_str(), 0700);
+		if (res) {
+			throw logger::error("cannot create directory");
+		}
+	}
+#endif // OS_UNIX
+
+#ifdef OS_WIN
+	if (CreateDirectory(directory.c_str(), NULL))
+	{
+		// Directory created
+	}
+	else if (ERROR_ALREADY_EXISTS == GetLastError())
+	{
+		// Directory already exists
+	}
+	else
+	{
+		throw logger::error("cannot create directory");
+	}
+
+
+	if (CreateDirectory(year_directory.c_str(), NULL))
+	{
+		// Directory created
+	}
+	else if (ERROR_ALREADY_EXISTS == GetLastError())
+	{
+		// Directory already exists
+	}
+	else
+	{
+		throw logger::error("cannot create directory");
+	}
+
+
+	if (CreateDirectory(month_directory.c_str(), NULL))
+	{
+		// Directory created
+	}
+	else if (ERROR_ALREADY_EXISTS == GetLastError())
+	{
+		// Directory already exists
+	}
+	else
+	{
+		throw logger::error("cannot create directory");
+	}
+
+#endif // OS_WIN
     
     
     std::ofstream file_out(filename, std::ios::app);

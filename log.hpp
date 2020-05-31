@@ -23,7 +23,8 @@
 #ifndef LOG_HPP
 #define LOG_HPP
 
-
+#include <string.h>			// strrchr
+#include <time.h>           // time, localtime
 #include <cstddef>          // size_t
 #include <utility>          // std::move
 #include <string>           // std::string, std::to_string
@@ -32,7 +33,6 @@
 #include <stack>            // std::stack
 #include <queue>            // std::queue
 #include <iostream>         // std::cout
-#include <time.h>           // time, localtime
 #include <sstream>          // std::stringstream
 #include <unordered_map>    // std::unordered_map
 
@@ -307,9 +307,9 @@ bool logger::BindConsoleStyle(std::string s, Args... args) {
 // @Implementation of
 //  logger::Trace
 
-logger::error& logger::Trace(logger::error& error, const char* PATH, const char* FUNC, int LINE) {
+logger::error& logger::Trace(logger::error& error, const char* path, const char* func, int line) {
     
-    error.push(PATH, FUNC, LINE);
+    error.push(path, func, line);
     
     return error;
     
@@ -321,12 +321,11 @@ logger::error& logger::Trace(logger::error& error, const char* PATH, const char*
 // @Implementation of
 //  logger::Trace
 
-logger::error logger::Trace(logger::error&& error, const char* PATH, const char* FUNC, int LINE) {
-    
-    error.push(PATH, FUNC, LINE);
+logger::error logger::Trace(logger::error&& error, const char* path, const char* func, int line) {
+
+    error.push(path, func, line);
     
     return error;
-    
 }
 
 
