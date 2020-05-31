@@ -315,8 +315,9 @@ namespace logger {
 
 void logger::BindLogDirectory(const char* s) {
     
-    struct stat st = {0};   // structure for holding stat
 #ifdef OS_UNIX
+    struct stat st = {0};   // structure for holding stat
+
     if (stat(s, &st) == -1) {
         throw logger::error("path is invalid");
     }
