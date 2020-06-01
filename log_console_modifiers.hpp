@@ -73,28 +73,28 @@ namespace logger {
         BG_DEFAULT          =      49
     } kModifier;
     
-    template < class CharT, class Traits >
-    std::basic_ostream<CharT, Traits>& operator<<( std::basic_ostream<CharT, Traits>& os, const kModifier& x ) {
-        os << "\033[" << (int)x << "m";
-        return os;
-    }
-    
-    template < class CharT, class Traits >
-    std::basic_ostream<CharT, Traits>& operator<<( std::basic_ostream<CharT, Traits>& os,const std::vector<kModifier>& x ) {
-        if(x.size() == 0) return os;
-
-        size_t n = x.size();
-        
-        os << "\033[";
-        
-        for(size_t i = 0; i < n - 1; ++i) {
-            os << (int)x[i] << ';';
-        }
-        os << (int)x.back() << 'm';
-        
-        return os;
-    }
-    
 };
+
+template < class CharT, class Traits >
+std::basic_ostream<CharT, Traits>& operator<<( std::basic_ostream<CharT, Traits>& os, const logger::kModifier& x ) {
+    os << "\033[" << (int)x << "m";
+    return os;
+}
+
+template < class CharT, class Traits >
+std::basic_ostream<CharT, Traits>& operator<<( std::basic_ostream<CharT, Traits>& os,const std::vector<logger::kModifier>& x ) {
+    if(x.size() == 0) return os;
+    
+    size_t n = x.size();
+    
+    os << "\033[";
+    
+    for(size_t i = 0; i < n - 1; ++i) {
+        os << (int)x[i] << ';';
+    }
+    os << (int)x.back() << 'm';
+    
+    return os;
+}
 
 #endif /* LOG_CONSOLE_MODIFIERS_HPP */

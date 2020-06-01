@@ -128,17 +128,15 @@ void logger::BindLogDirectory(const char* s) {
 #endif // OS_UNIX
 
 #ifdef OS_WIN
-
 	WIN32_FIND_DATA data;
 	HANDLE hFile = FindFirstFile(s, &data);
 
 	if (hFile == INVALID_HANDLE_VALUE) // directory doesn't exist
 		throw logger::error("path is invalid");
-
 #endif // OS_WIN
 
-    
     logger::log_directory_ = s;
+    
 }
 
 
@@ -288,7 +286,7 @@ bool logger::FileLog(const char* PATH, const char* FILENAME, int LINE, const cha
     }
     
     
-    ProcessVars(queue, args...);    // convert vars to string and push them to the queue
+    ProcessVars(&queue, args...);    // convert vars to string and push them to the queue
     
     
     while(!queue.empty()) {
@@ -450,7 +448,7 @@ bool logger::FileLog(const char* PATH, const char* FILENAME, int LINE, const cha
     
     return file_out.good();
     
-};
+}
 
 // Macro that pass to the logger::FileLog additional info about place where it has been called
 #define FileLog(...) logger::FileLog(__FILE__,__FILENAME__,__LINE__,__func__ ,__VA_ARGS__)
@@ -458,7 +456,7 @@ bool logger::FileLog(const char* PATH, const char* FILENAME, int LINE, const cha
 // DEBUG ONLY mode
 #ifdef DEBUG_ONLY
     #if defined(DEBUG) | defined(_DEBUG)
-        #define FileLog(...)
+        #define FileLog(...) NULL
     #endif
 #endif
 

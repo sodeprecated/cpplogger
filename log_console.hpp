@@ -20,8 +20,8 @@
 //OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //SOFTWARE.
 
-#ifndef LOG_HPP
-#define LOG_HPP
+#ifndef LOG_CONSOLE_HPP
+#define LOG_CONSOLE_HPP
 
 #include <string.h>			            // strrchr
 #include <time.h>                       // time, localtime
@@ -35,19 +35,18 @@
 #include <sstream>                      // std::stringstream
 #include <unordered_map>                // std::unordered_map
 
-#include "log_console_modifiers.hpp"    // logger::kModifier
-#include "log_error.hpp"                // logger::error
-#include "log_utility.hpp"              // logger::ProcessVars, logger::StrToLen
-
-#define __FILENAME__ (strrchr("/" __FILE__, '/') + 1)
-
 #if defined(_WIN32) | defined(_WIN64)
-#include <windows.h>                    //  DWORD, HANDLE, GetStdHandle, GetConsoleMode, SetConsoleMode
 #define ENABLE_VIRTUAL_TERMINAL_PROCESSING 0x0004
 #define OS_WIN
 #else
 #define OS_UNIX
 #endif
+
+#include "log_console_modifiers.hpp"    // logger::kModifier
+#include "log_error.hpp"                // logger::error
+#include "log_utility.hpp"              // logger::ProcessVars, logger::StrToLen
+
+#define __FILENAME__ (strrchr("/" __FILE__, '/') + 1)
 
 namespace logger {
     
@@ -156,7 +155,7 @@ namespace logger {
     // return true if everything ok and false if there were errors with console output
     
     template <class ...Args>
-    bool ConsoleLog(const char*, const char*, int, const char*, const std::string&, Args...);
+    bool ConsoleLog(const char*, const char*, int, const char*, const std::string&, const Args&...);
     
     
     
@@ -176,25 +175,6 @@ namespace logger {
     // return true if everything ok and false if there were errors with console output
     
     bool ConsoleLog(const char*, const char*, int, const char*, error&);
-    
-    
-    
-    
-#ifdef OS_WIN
-    // @function EnableWindowsAnsiEscapeSequence()
-    //
-    //
-    // @return void
-    //
-    // @throw logger::error
-    //
-    //
-    // enables ansi escape sequence on windows platform
-    // throws logger::error if there were errors
-    // with windows console
-    
-    void EnableWindowsAnsiEscapeSequence();
-#endif
     
 }
 
@@ -245,12 +225,12 @@ logger::error logger::Trace(logger::error&& error, const char* path, const char*
 //  logger::ConsoleLog
 
 template <class ...Args>
-bool logger::ConsoleLog(const char* PATH, const char* FILENAME, int LINE, const char* FUNC, const std::string& s, Args... args) {
+bool logger::ConsoleLog(const char* PATH, const char* FILENAME, int LINE, const char* FUNC, const std::string& s, const Args&... args) {
     
 #ifdef OS_WIN
     static bool escape_sequence_enabled = false;
     if(!escape_sequence_enabled) {
-        EnableWindowsAnsiEscapeSequence();
+        logger::EnableWindowsAnsiEscapeSequence();
         escape_sequence_enabled = true;
     }
 #endif
@@ -269,7 +249,7 @@ bool logger::ConsoleLog(const char* PATH, const char* FILENAME, int LINE, const 
     
     modifier_stack.push(&default_style);
     
-    ProcessVars(queue, args...);    // convert vars to string and push them to the queue
+    ProcessVars(&queue, args...);    // convert vars to string and push them to the queue
     
 
     
@@ -434,7 +414,7 @@ bool logger::ConsoleLog(const char*, const char*, int, const char*, logger::erro
 #ifdef OS_WIN
     static bool escape_sequence_enabled = false;
     if(!escape_sequence_enabled) {
-        EnableWindowsAnsiEscapeSequence();
+        logger::EnableWindowsAnsiEscapeSequence();
         escape_sequence_enabled = true;
     }
 #endif
@@ -449,37 +429,6 @@ bool logger::ConsoleLog(const char*, const char*, int, const char*, logger::erro
     
 };
 
-
-
-
-#ifdef OS_WIN
-// @Implementation of
-//  logger::EnableWindowsAnsiEscapeSequence
-
-void logger::EnableWindowsAnsiEscapeSequence() {
-    
-    // Set output mode to handle virtual terminal sequences
-    HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
-    if (hOut == INVALID_HANDLE_VALUE)
-    {
-        throw logger::error("cannot enable ansi escape sequence");
-    }
-    
-    DWORD dwMode = 0;
-    if (!GetConsoleMode(hOut, &dwMode))
-    {
-        throw logger::error("cannot enable ansi escape sequence");
-    }
-    
-    dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
-    if (!SetConsoleMode(hOut, dwMode))
-    {
-        throw logger::error("cannot enable ansi escape sequence");
-    }
-    
-}
-#endif
-
 // Macro that pass to the logger::ConsoleLog additional info about place where it has been called
 #define ConsoleLog(...) logger::ConsoleLog(__FILE__,__FILENAME__,__LINE__,__func__ ,__VA_ARGS__)
 
@@ -489,8 +438,8 @@ void logger::EnableWindowsAnsiEscapeSequence() {
 // DEBUG ONLY mode
 #ifdef DEBUG_ONLY
     #if defined(DEBUG) | defined(_DEBUG)
-        #define ConsoleLog(...) 
+        #define ConsoleLog(...) NULL
     #endif
 #endif
 
-#endif /* LOG_HPP */
+#endif /* LOG_CONSOLE_HPP */

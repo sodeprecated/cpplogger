@@ -29,7 +29,29 @@
 #include <queue>            // std::queue
 #include <sstream>          // std::stringstream
 
+#ifdef OS_WIN
+#include <windows.h>        //  DWORD, HANDLE, GetStdHandle, GetConsoleMode, SetConsoleMode
+#endif
+
 namespace logger {
+    
+#ifdef OS_WIN
+    // @function EnableWindowsAnsiEscapeSequence()
+    //
+    //
+    // @return void
+    //
+    // @throw logger::error
+    //
+    //
+    // enables ansi escape sequence on windows platform
+    // throws logger::error if there were errors
+    // with windows console
+    
+    void EnableWindowsAnsiEscapeSequence();
+#endif
+    
+    
     
     // @function StrToLen(a,b,c)
     //
@@ -59,7 +81,7 @@ namespace logger {
     //
     // Does nothing
     
-    void ProcessVars(std::queue<std::string>&);
+    void ProcessVars(std::queue<std::string>*);
     
     
     
@@ -79,7 +101,7 @@ namespace logger {
     // then push string to the @queue
     
     template <class T>
-    void ProcessVars(std::queue<std::string>&, T);
+    void ProcessVars(std::queue<std::string>*, const T&);
     
     
     
@@ -101,7 +123,7 @@ namespace logger {
     // pass args recursively
     
     template <class T, class ...Args>
-    void ProcessVars(std::queue<std::string>&, T, Args...);
+    void ProcessVars(std::queue<std::string>*, const T&, const Args&...);
     
 }
 
@@ -125,7 +147,7 @@ std::string logger::StrToLen(std::string &&s, size_t len, char fill) {
 // @Implementation of
 //  logger::ProcessVars
 
-void logger::ProcessVars(std::queue<std::string>& queue) {
+void logger::ProcessVars(std::queue<std::string>* queue) {
     
 }
 
@@ -136,13 +158,13 @@ void logger::ProcessVars(std::queue<std::string>& queue) {
 //  logger::ProcessVars
 
 template <class T>
-void logger::ProcessVars(std::queue<std::string>& queue, T var) {
+void logger::ProcessVars(std::queue<std::string>* queue, const T& var) {
     
     std::stringstream ss;
     
     ss << var;
     
-    queue.push(ss.str()); // copy elision
+    queue->push(ss.str()); // copy elision
     
 }
 
@@ -153,16 +175,47 @@ void logger::ProcessVars(std::queue<std::string>& queue, T var) {
 //  logger::ProcessVars
 
 template <class T, class ...Args>
-void logger::ProcessVars(std::queue<std::string>& queue, T var, Args... args) {
+void logger::ProcessVars(std::queue<std::string>* queue, const T& var, const Args&... args) {
     
     std::stringstream ss;
     
     ss << var;
     
-    queue.push(ss.str()); // copy elision
+    queue->push(ss.str()); // copy elision
     
     ProcessVars(queue,args...);
     
 }
+
+
+
+
+#ifdef OS_WIN
+// @Implementation of
+//  logger::EnableWindowsAnsiEscapeSequence
+
+void logger::EnableWindowsAnsiEscapeSequence() {
+    
+    // Set output mode to handle virtual terminal sequences
+    HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+    if (hOut == INVALID_HANDLE_VALUE)
+    {
+        throw logger::error("cannot enable ansi escape sequence");
+    }
+    
+    DWORD dwMode = 0;
+    if (!GetConsoleMode(hOut, &dwMode))
+    {
+        throw logger::error("cannot enable ansi escape sequence");
+    }
+    
+    dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+    if (!SetConsoleMode(hOut, dwMode))
+    {
+        throw logger::error("cannot enable ansi escape sequence");
+    }
+    
+}
+#endif
 
 #endif /* LOG_UTILITY_HPP */
