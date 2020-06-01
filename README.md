@@ -1,5 +1,8 @@
 # cpplogger
-[![<MrDanikus>](https://circleci.com/gh/MrDanikus/cpplogger.svg?style=svg)](https://circleci.com/gh/MrDanikus/cpplogger/)
+[![](https://circleci.com/gh/MrDanikus/cpplogger.svg?style=svg)](https://circleci.com/gh/MrDanikus/cpplogger/)
+[![](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/MrDanikus/cpplogger/blob/master/LICENSE)
+
+
 ### Announcements:
 #### Release 1.0.0
 [Release 1.0.0](https://github.com/MrDanikus/cpplogger/releases/tag/release-1.0.0) is now available.
