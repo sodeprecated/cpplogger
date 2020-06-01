@@ -50,24 +50,12 @@
 
 namespace logger {
     
-    // @struct style
-    //
-    //
-    // @constructor style(std::initializer_list<kModifier>) : construct vector of modifiers with initializer list
-    // @constructor style()                                 : default constructor
-    //
-    // @member modifiers - std::vector of kModifiers representing the set of modifiers that will be used with this style
+    // @typedef style
     //
     //
     // structure for holding modifiers that applied to elements with this style
     
-    struct style {
-        std::vector<kModifier> modifiers;
-        
-        style(std::initializer_list<kModifier> il) : modifiers(il) {};
-        style(){};
-    };
-    
+    typedef std::vector<kModifier> style;
     
     
     
@@ -359,7 +347,7 @@ bool logger::ConsoleLog(const char* PATH, const char* FILENAME, int LINE, const 
                     modifier_stack.push(&style);
                     
                     // apply modifier
-                    result_ss << style.modifiers;
+                    result_ss << style;
                     
                 }catch(std::out_of_range e) {
                     throw logger::error(e.what());
@@ -376,7 +364,7 @@ bool logger::ConsoleLog(const char* PATH, const char* FILENAME, int LINE, const 
                 modifier_stack.pop();
                 
                 result_ss << logger::RESET;
-                result_ss << modifier_stack.top()->modifiers;
+                result_ss << *modifier_stack.top();
                 
                 i += 1;
                 
