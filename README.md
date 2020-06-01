@@ -1,4 +1,4 @@
-# cpplogger
+![](https://github.com/MrDanikus/cpplogger/raw/master/image/github-logo.png)
 [![](https://circleci.com/gh/MrDanikus/cpplogger.svg?style=svg)](https://circleci.com/gh/MrDanikus/cpplogger/)
 [![](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/MrDanikus/cpplogger/blob/master/LICENSE)
 
