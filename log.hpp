@@ -247,6 +247,15 @@ logger::error logger::Trace(logger::error&& error, const char* path, const char*
 template <class ...Args>
 bool logger::ConsoleLog(const char* PATH, const char* FILENAME, int LINE, const char* FUNC, const std::string& s, Args... args) {
     
+#ifdef OS_WIN
+    static bool escape_sequence_enabled = false;
+    if(!escape_sequence_enabled) {
+        EnableWindowsAnsiEscapeSequence();
+        escape_sequence_enabled = true;
+    }
+#endif
+    
+    
     static time_t               the_time  = time(NULL);             // static time object
     struct tm                   *cur_time = localtime(&the_time);   // current time object
     size_t                      n         = s.length();             // length of string
@@ -421,6 +430,14 @@ bool logger::ConsoleLog(const char* PATH, const char* FILENAME, int LINE, const 
 //  logger::ConsoleLog
 
 bool logger::ConsoleLog(const char*, const char*, int, const char*, logger::error& error) {
+    
+#ifdef OS_WIN
+    static bool escape_sequence_enabled = false;
+    if(!escape_sequence_enabled) {
+        EnableWindowsAnsiEscapeSequence();
+        escape_sequence_enabled = true;
+    }
+#endif
     
     std::cout << logger::FG_WHITE << logger::BG_RED << "[ERROR]" << logger::RESET << " error message : \"" << logger::FG_RED << error.what() << logger::RESET <<  "\" error stack :\n" ;
     while(!error.error_stack_.empty()) {
