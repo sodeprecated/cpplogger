@@ -35,6 +35,4 @@ namespace logger {
     
 }
 
-
-
 #endif /* LOG_MESSAGE_TYPES_HPP */

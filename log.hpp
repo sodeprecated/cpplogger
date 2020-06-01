@@ -23,67 +23,33 @@
 #ifndef LOG_HPP
 #define LOG_HPP
 
+#include <string.h>			            // strrchr
+#include <time.h>                       // time, localtime
+#include <cstddef>                      // size_t
+#include <utility>                      // std::move
+#include <string>                       // std::string, std::to_string
+#include <vector>                       // std::vector
+#include <stack>                        // std::stack
+#include <queue>                        // std::queue
+#include <iostream>                     // std::cout
+#include <sstream>                      // std::stringstream
+#include <unordered_map>                // std::unordered_map
 
-#include <cstddef>          // size_t
-#include <utility>          // std::move
-#include <string>           // std::string, std::to_string
-#include <exception>        // std::exception
-#include <vector>           // std::vector
-#include <stack>            // std::stack
-#include <queue>            // std::queue
-#include <iostream>         // std::cout
-#include <time.h>           // time, localtime
-#include <sstream>          // std::stringstream
-#include <unordered_map>    // std::unordered_map
-
-#include "console_modifiers.hpp" // kModifier
-
+#include "log_console_modifiers.hpp"    // logger::kModifier
+#include "log_error.hpp"                // logger::error
+#include "log_utility.hpp"              // logger::ProcessVars, logger::StrToLen
 
 #define __FILENAME__ (strrchr("/" __FILE__, '/') + 1)
 
-namespace logger {
-   
-#ifndef FILE_LOG_HPP
-    
-    // @struct error
-    //
-    //
-    // @member message - std::string : string containing information about the error
-    //
-    // @constructor error(const char*) : construct object from const C-string
-    // @constructor error(std::string) : construct object from std::string
-    //
-    //
-    // @method what()
-    //     @return const char*
-    //
-    //     return null terminating string containing information about the error
-    //
-    //
-    // structure for holding errors that ConsoleLog throws
-    
-    struct error : std::exception {
-        
-        error(){}
-        error(const char* s)    : message_(s) {}
-        error(std::string s)  : message_(std::move(s)) {}
-        
-        virtual const char* what() const noexcept override { return message_.c_str(); }
-        
-        void push(const char* path, const char* func, int line) {
-            error_stack_.push(std::string(path) + ':' + std::string(func) + ':' + std::to_string(line));
-        }
-        
-        std::stack<std::string> error_stack_;
-        std::string             message_;
-        
-    };
-    
+#if defined(_WIN32) | defined(_WIN64)
+#include <windows.h>                    //  DWORD, HANDLE, GetStdHandle, GetConsoleMode, SetConsoleMode
+#define ENABLE_VIRTUAL_TERMINAL_PROCESSING 0x0004
+#define OS_WIN
+#else
+#define OS_UNIX
 #endif
-    
-    
-    
-    
+
+namespace logger {
     
     // @struct style
     //
@@ -125,6 +91,7 @@ namespace logger {
     //
     // @return bool
     //
+    //
     // set correspondence between style and it name and return true if everything fine and false otherwise
     
     template <class ...Args>
@@ -142,6 +109,7 @@ namespace logger {
     // @param line  - int            : line number
     //
     // @return logger::error&
+    //
     //
     // Push to error's stack information about current place
     // and then return error
@@ -161,89 +129,12 @@ namespace logger {
     //
     // @return logger::error
     //
+    //
     // Creates new error
     // push to error's stack information about current place
     // and then return error
     
     error Trace(error&&, const char*, const char*, int);
-    
-    
-    
-    
-    
-#ifndef FILE_LOG_HPP
-    
-    // @function StrToLen(a,b,c)
-    //
-    //
-    // @param a - std::string&& : target string
-    // @param b - size_t        : target length
-    // @param c - char          : fill character
-    //
-    // @return std::string
-    //
-    //
-    // move string @a and add (@b - Length(@a)) symbols that equals @c to the front
-    // if Length(@a) is at least @b, return @a without changes
-    
-    std::string StrToLen(std::string&&, size_t, char);
-    
-    
-    
-    
-    // @function ProcessVars(queue)
-    //
-    //
-    // @param queue - std::queue<std::string>   : queue with processed variables
-    //
-    // @return void
-    //
-    // Does nothing
-    
-    void ProcessVars(std::queue<std::string>&);
-    
-    
-    
-    
-    
-    // template<T>
-    // @function ProcessVars(queue,var)
-    //
-    //
-    // @param queue - std::queue<std::string>   : queue with processed variables
-    // @param var   - T                         : current processed value
-    //
-    // @return void
-    //
-    // create a stringstream and pass @var to it
-    // then push string to the @queue
-    
-    template <class T>
-    void ProcessVars(std::queue<std::string>&, T);
-    
-    
-    
-    
-    
-    // template<T>
-    // @function ProcessVars(queue,var,args)
-    //
-    //
-    // @param queue - std::queue<std::string>   : queue with processed variables
-    // @param var   - T                         : current processed value
-    // @param args  - pack                      : variables
-    //
-    // @return void
-    //
-    // create a stringstream and pass @var to it
-    // then push string to the @queue
-    // pass args recursively
-    
-    template <class T, class ...Args>
-    void ProcessVars(std::queue<std::string>&, T, Args...);
-    
-#endif
-    
     
     
     
@@ -286,6 +177,25 @@ namespace logger {
     
     bool ConsoleLog(const char*, const char*, int, const char*, error&);
     
+    
+    
+    
+#ifdef OS_WIN
+    // @function EnableWindowsAnsiEscapeSequence()
+    //
+    //
+    // @return void
+    //
+    // @throw logger::error
+    //
+    //
+    // enables ansi escape sequence on windows platform
+    // throws logger::error if there were errors
+    // with windows console
+    
+    void EnableWindowsAnsiEscapeSequence();
+#endif
+    
 }
 
 
@@ -307,9 +217,9 @@ bool logger::BindConsoleStyle(std::string s, Args... args) {
 // @Implementation of
 //  logger::Trace
 
-logger::error& logger::Trace(logger::error& error, const char* PATH, const char* FUNC, int LINE) {
+logger::error& logger::Trace(logger::error& error, const char* path, const char* func, int line) {
     
-    error.push(PATH, FUNC, LINE);
+    error.push(path, func, line);
     
     return error;
     
@@ -321,79 +231,12 @@ logger::error& logger::Trace(logger::error& error, const char* PATH, const char*
 // @Implementation of
 //  logger::Trace
 
-logger::error logger::Trace(logger::error&& error, const char* PATH, const char* FUNC, int LINE) {
-    
-    error.push(PATH, FUNC, LINE);
+logger::error logger::Trace(logger::error&& error, const char* path, const char* func, int line) {
+
+    error.push(path, func, line);
     
     return error;
-    
 }
-
-
-
-
-#ifndef FILE_LOG_HPP
-
-// @Implementation of
-//  logger::StrToLen
-
-std::string logger::StrToLen(std::string &&s, size_t len, char fill) {
-    
-    if(s.length() >= len) return std::move(s);
-    
-    s.insert(0,len - s.length(),fill);
-    
-    return std::move(s);
-
-}
-
-
-
-
-// @Implementation of
-//  logger::ProcessVars
-
-void logger::ProcessVars(std::queue<std::string>& queue) {
-    
-}
-
-
-
-
-// @Implementation of
-//  logger::ProcessVars
-
-template <class T>
-void logger::ProcessVars(std::queue<std::string>& queue, T var) {
-    
-    std::stringstream ss;
-    
-    ss << var;
-    
-    queue.push(ss.str()); // copy elision
-    
-}
-
-
-
-
-// @Implementation of
-//  logger::ProcessVars
-
-template <class T, class ...Args>
-void logger::ProcessVars(std::queue<std::string>& queue, T var, Args... args) {
-    
-    std::stringstream ss;
-    
-    ss << var;
-    
-    queue.push(ss.str()); // copy elision
-    
-    ProcessVars(queue,args...);
-    
-}
-
-#endif
 
 
 
@@ -403,6 +246,15 @@ void logger::ProcessVars(std::queue<std::string>& queue, T var, Args... args) {
 
 template <class ...Args>
 bool logger::ConsoleLog(const char* PATH, const char* FILENAME, int LINE, const char* FUNC, const std::string& s, Args... args) {
+    
+#ifdef OS_WIN
+    static bool escape_sequence_enabled = false;
+    if(!escape_sequence_enabled) {
+        EnableWindowsAnsiEscapeSequence();
+        escape_sequence_enabled = true;
+    }
+#endif
+    
     
     static time_t               the_time  = time(NULL);             // static time object
     struct tm                   *cur_time = localtime(&the_time);   // current time object
@@ -579,6 +431,14 @@ bool logger::ConsoleLog(const char* PATH, const char* FILENAME, int LINE, const 
 
 bool logger::ConsoleLog(const char*, const char*, int, const char*, logger::error& error) {
     
+#ifdef OS_WIN
+    static bool escape_sequence_enabled = false;
+    if(!escape_sequence_enabled) {
+        EnableWindowsAnsiEscapeSequence();
+        escape_sequence_enabled = true;
+    }
+#endif
+    
     std::cout << logger::FG_WHITE << logger::BG_RED << "[ERROR]" << logger::RESET << " error message : \"" << logger::FG_RED << error.what() << logger::RESET <<  "\" error stack :\n" ;
     while(!error.error_stack_.empty()) {
         std::cout << '\t' << logger::UNDERLINE <<  error.error_stack_.top() << logger::UNDERLINE_OFF << "\n";
@@ -592,11 +452,45 @@ bool logger::ConsoleLog(const char*, const char*, int, const char*, logger::erro
 
 
 
+#ifdef OS_WIN
+// @Implementation of
+//  logger::EnableWindowsAnsiEscapeSequence
+
+void logger::EnableWindowsAnsiEscapeSequence() {
+    
+    // Set output mode to handle virtual terminal sequences
+    HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+    if (hOut == INVALID_HANDLE_VALUE)
+    {
+        throw logger::error("cannot enable ansi escape sequence");
+    }
+    
+    DWORD dwMode = 0;
+    if (!GetConsoleMode(hOut, &dwMode))
+    {
+        throw logger::error("cannot enable ansi escape sequence");
+    }
+    
+    dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+    if (!SetConsoleMode(hOut, dwMode))
+    {
+        throw logger::error("cannot enable ansi escape sequence");
+    }
+    
+}
+#endif
+
 // Macro that pass to the logger::ConsoleLog additional info about place where it has been called
 #define ConsoleLog(...) logger::ConsoleLog(__FILE__,__FILENAME__,__LINE__,__func__ ,__VA_ARGS__)
 
 // Macro that pass to the logger::Trace additional info about place where it has been called
 #define Trace(x) logger::Trace(x,__FILE__,__func__,__LINE__)
 
+// DEBUG ONLY mode
+#ifdef DEBUG_ONLY
+    #if defined(DEBUG) | defined(_DEBUG)
+        #define ConsoleLog(...) 
+    #endif
+#endif
 
 #endif /* LOG_HPP */

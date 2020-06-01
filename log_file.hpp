@@ -20,217 +20,30 @@
 //OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //SOFTWARE.
 
-#ifndef FILE_LOG_HPP
-#define FILE_LOG_HPP
+#ifndef LOG_FILE_HPP
+#define LOG_FILE_HPP
 
-#include <cstddef>          // size_t
-#include <utility>          // std::move
-#include <string>           // std::string, std::to_string
-#include <queue>            // std::queue
-#include <fstream>          // std::ofstream
-#include <time.h>           // time, localtime
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h>
+#include <string.h>                 // strrchr
+#include <cstddef>                  // size_t
+#include <time.h>                   // time, localtime
+#include <string>                   // std::string, std::to_string
+#include <queue>                    // std::queue
+#include <fstream>                  // std::ofstream
 
-
-
-
-// Part of log.hpp file that is needed to proper
-// work of file log
-
-#ifndef LOG_HPP
-
-#include <exception>        // std::exception
-#include <stack>            // std::stack
-#include <sstream>          // std::stringstream
-
-namespace logger {
-    
-    // @struct error
-    //
-    //
-    // @member message - std::string : string containing information about the error
-    //
-    // @constructor error(const char*) : construct object from const C-string
-    // @constructor error(std::string) : construct object from std::string
-    //
-    //
-    // @method what()
-    //     @return const char*
-    //
-    //     return null terminating string containing information about the error
-    //
-    //
-    // structure for holding errors that ConsoleLog throws
-    
-    struct error : std::exception {
-        
-        error(){}
-        error(const char* s)    : message_(s) {}
-        error(std::string s)  : message_(std::move(s)) {}
-        
-        virtual const char* what() const noexcept override { return message_.c_str(); }
-        
-        void push(const char* path, const char* func, int line) {
-            error_stack_.push(std::string(path) + ':' + std::string(func) + ':' + std::to_string(line));
-        }
-        
-        std::stack<std::string> error_stack_;
-        std::string             message_;
-        
-    };
-    
-    
-    
-    
-    // @function StrToLen(a,b,c)
-    //
-    //
-    // @param a - std::string&& : target string
-    // @param b - size_t        : target length
-    // @param c - char          : fill character
-    //
-    // @return std::string
-    //
-    //
-    // move string @a and add (@b - Length(@a)) symbols that equals @c to the front
-    // if Length(@a) is at least @b, return @a without changes
-    
-    std::string StrToLen(std::string&&, size_t, char);
-    
-    
-    
-    
-    // @function ProcessVars(queue)
-    //
-    //
-    // @param queue - std::queue<std::string>   : queue with processed variables
-    //
-    // @return void
-    //
-    // Does nothing
-    
-    void ProcessVars(std::queue<std::string>&);
-    
-    
-    
-    
-    
-    // template<T>
-    // @function ProcessVars(queue,var)
-    //
-    //
-    // @param queue - std::queue<std::string>   : queue with processed variables
-    // @param var   - T                         : current processed value
-    //
-    // @return void
-    //
-    // create a stringstream and pass @var to it
-    // then push string to the @queue
-    
-    template <class T>
-    void ProcessVars(std::queue<std::string>&, T);
-    
-    
-    
-    
-    
-    // template<T>
-    // @function ProcessVars(queue,var,args)
-    //
-    //
-    // @param queue - std::queue<std::string>   : queue with processed variables
-    // @param var   - T                         : current processed value
-    // @param args  - pack                      : variables
-    //
-    // @return void
-    //
-    // create a stringstream and pass @var to it
-    // then push string to the @queue
-    // pass args recursively
-    
-    template <class T, class ...Args>
-    void ProcessVars(std::queue<std::string>&, T, Args...);
-    
-}
-
-
-
-
-// @Implementation of
-//  logger::StrToLen
-
-std::string logger::StrToLen(std::string &&s, size_t len, char fill) {
-    
-    if(s.length() >= len) return std::move(s);
-    
-    s.insert(0,len - s.length(),fill);
-    
-    return std::move(s);
-    
-}
-
-
-
-
-// @Implementation of
-//  logger::ProcessVars
-
-void logger::ProcessVars(std::queue<std::string>& queue) {
-    
-}
-
-
-
-
-// @Implementation of
-//  logger::ProcessVars
-
-template <class T>
-void logger::ProcessVars(std::queue<std::string>& queue, T var) {
-    
-    std::stringstream ss;
-    
-    ss << var;
-    
-    queue.push(ss.str()); // copy elision
-    
-}
-
-
-
-
-// @Implementation of
-//  logger::ProcessVars
-
-template <class T, class ...Args>
-void logger::ProcessVars(std::queue<std::string>& queue, T var, Args... args) {
-    
-    std::stringstream ss;
-    
-    ss << var;
-    
-    queue.push(ss.str()); // copy elision
-    
-    ProcessVars(queue,args...);
-    
-}
-
+#if defined(_WIN32) | defined(_WIN64)
+#include <windows.h>                // WIN32_FIND_DATA, HANDLE, CreateDirectory
+#define OS_WIN
+#else
+#include <sys/stat.h>               // stat
+#include <unistd.h>                 // mkdir
+#define OS_UNIX
 #endif
 
+#include "log_message_types.hpp"    // logger::log_message_type
+#include "log_error.hpp"            // logger::error
+#include "log_utility.hpp"          // logger::ProcessVars, logger::StrToLen
 
-
-
-
-
-
-
-
-
-#include "log_message_types.hpp"
-
-
+#define __FILENAME__ (strrchr("/" __FILE__, '/') + 1)
 
 namespace logger {
     
@@ -306,11 +119,24 @@ namespace logger {
 
 void logger::BindLogDirectory(const char* s) {
     
+#ifdef OS_UNIX
     struct stat st = {0};   // structure for holding stat
-    
+
     if (stat(s, &st) == -1) {
         throw logger::error("path is invalid");
     }
+#endif // OS_UNIX
+
+#ifdef OS_WIN
+
+	WIN32_FIND_DATA data;
+	HANDLE hFile = FindFirstFile(s, &data);
+
+	if (hFile == INVALID_HANDLE_VALUE) // directory doesn't exist
+		throw logger::error("path is invalid");
+
+#endif // OS_WIN
+
     
     logger::log_directory_ = s;
 }
@@ -356,6 +182,8 @@ bool logger::FileLog(const char* PATH, const char* FILENAME, int LINE, const cha
     std::queue<std::string> queue;  // queue with variable converted to string
     
     
+
+#ifdef OS_UNIX
     int res;
     
     if (stat(directory.c_str(), &st) == -1) {
@@ -378,6 +206,55 @@ bool logger::FileLog(const char* PATH, const char* FILENAME, int LINE, const cha
             throw logger::error("cannot create directory");
         }
     }
+#endif // OS_UNIX
+
+#ifdef OS_WIN
+	if (CreateDirectory(directory.c_str(), NULL))
+	{
+		// Directory created
+	}
+	else if (ERROR_ALREADY_EXISTS == GetLastError())
+	{
+		// Directory already exists
+	}
+	else
+	{
+		throw logger::error("cannot create directory");
+	}
+
+
+	if (CreateDirectory(year_directory.c_str(), NULL))
+	{
+		// Directory created
+	}
+	else if (ERROR_ALREADY_EXISTS == GetLastError())
+	{
+		// Directory already exists
+	}
+	else
+	{
+		throw logger::error("cannot create directory");
+	}
+
+
+	if (CreateDirectory(month_directory.c_str(), NULL))
+	{
+		// Directory created
+	}
+	else if (ERROR_ALREADY_EXISTS == GetLastError())
+	{
+		// Directory already exists
+	}
+	else
+	{
+		throw logger::error("cannot create directory");
+	}
+
+#endif // OS_WIN
+
+
+
+
     
     
     std::ofstream file_out(filename, std::ios::app);
@@ -475,28 +352,74 @@ bool logger::FileLog(const char* PATH, const char* FILENAME, int LINE, const cha
     std::to_string(cur_time->tm_year + 1900) + ".log";
     
     
-    int res;
-    
-    if (stat(directory.c_str(), &st) == -1) {
-        res = mkdir(directory.c_str(), 0700);
-        if(res) {
-            throw logger::error("cannot create directory");
-        }
-    }
-    
-    if (stat(year_directory.c_str(), &st) == -1) {
-        res = mkdir(year_directory.c_str(), 0700);
-        if(res) {
-            throw logger::error("cannot create directory");
-        }
-    }
-    
-    if (stat(month_directory.c_str(), &st) == -1) {
-        res = mkdir(month_directory.c_str(), 0700);
-        if(res) {
-            throw logger::error("cannot create directory");
-        }
-    }
+#ifdef OS_UNIX
+	int res;
+
+	if (stat(directory.c_str(), &st) == -1) {
+		res = mkdir(directory.c_str(), 0700);
+		if (res) {
+			throw logger::error("cannot create directory");
+		}
+	}
+
+	if (stat(year_directory.c_str(), &st) == -1) {
+		res = mkdir(year_directory.c_str(), 0700);
+		if (res) {
+			throw logger::error("cannot create directory");
+		}
+	}
+
+	if (stat(month_directory.c_str(), &st) == -1) {
+		res = mkdir(month_directory.c_str(), 0700);
+		if (res) {
+			throw logger::error("cannot create directory");
+		}
+	}
+#endif // OS_UNIX
+
+#ifdef OS_WIN
+	if (CreateDirectory(directory.c_str(), NULL))
+	{
+		// Directory created
+	}
+	else if (ERROR_ALREADY_EXISTS == GetLastError())
+	{
+		// Directory already exists
+	}
+	else
+	{
+		throw logger::error("cannot create directory");
+	}
+
+
+	if (CreateDirectory(year_directory.c_str(), NULL))
+	{
+		// Directory created
+	}
+	else if (ERROR_ALREADY_EXISTS == GetLastError())
+	{
+		// Directory already exists
+	}
+	else
+	{
+		throw logger::error("cannot create directory");
+	}
+
+
+	if (CreateDirectory(month_directory.c_str(), NULL))
+	{
+		// Directory created
+	}
+	else if (ERROR_ALREADY_EXISTS == GetLastError())
+	{
+		// Directory already exists
+	}
+	else
+	{
+		throw logger::error("cannot create directory");
+	}
+
+#endif // OS_WIN
     
     
     std::ofstream file_out(filename, std::ios::app);
@@ -529,9 +452,14 @@ bool logger::FileLog(const char* PATH, const char* FILENAME, int LINE, const cha
     
 };
 
-
-
 // Macro that pass to the logger::FileLog additional info about place where it has been called
 #define FileLog(...) logger::FileLog(__FILE__,__FILENAME__,__LINE__,__func__ ,__VA_ARGS__)
 
-#endif /* FILE_LOG_HPP */
+// DEBUG ONLY mode
+#ifdef DEBUG_ONLY
+    #if defined(DEBUG) | defined(_DEBUG)
+        #define FileLog(...)
+    #endif
+#endif
+
+#endif /* LOG_FILE_HPP */
