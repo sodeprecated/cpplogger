@@ -7,7 +7,7 @@ jobs:
     steps:
       - checkout
       - run: mkdir -p build && cd build
-      - run: g++ -o main release/main.cpp -std=c++11
+      - run: g++ -o main sample/main.cpp -std=c++11
       - run: ./main
   build_gcc_6:
     docker:
@@ -15,7 +15,7 @@ jobs:
     steps:
       - checkout
       - run: mkdir -p build && cd build
-      - run: g++ -o main release/main.cpp -std=c++14
+      - run: g++ -o main sample/main.cpp -std=c++14
       - run: ./main
   build_gcc_latest:
     docker:
@@ -23,7 +23,7 @@ jobs:
     steps:
       - checkout
       - run: mkdir -p build && cd build
-      - run: g++ -o release/main main.cpp -std=c++20
+      - run: g++ -o main sample/main.cpp -std=c++20
       - run: ./main
 
 workflows:
