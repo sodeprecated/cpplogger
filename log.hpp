@@ -23,67 +23,25 @@
 #ifndef LOG_HPP
 #define LOG_HPP
 
-#include <string.h>			// strrchr
-#include <time.h>           // time, localtime
-#include <cstddef>          // size_t
-#include <utility>          // std::move
-#include <string>           // std::string, std::to_string
-#include <exception>        // std::exception
-#include <vector>           // std::vector
-#include <stack>            // std::stack
-#include <queue>            // std::queue
-#include <iostream>         // std::cout
-#include <sstream>          // std::stringstream
-#include <unordered_map>    // std::unordered_map
+#include <string.h>			            // strrchr
+#include <time.h>                       // time, localtime
+#include <cstddef>                      // size_t
+#include <utility>                      // std::move
+#include <string>                       // std::string, std::to_string
+#include <vector>                       // std::vector
+#include <stack>                        // std::stack
+#include <queue>                        // std::queue
+#include <iostream>                     // std::cout
+#include <sstream>                      // std::stringstream
+#include <unordered_map>                // std::unordered_map
 
-#include "console_modifiers.hpp" // kModifier
-
+#include "log_console_modifiers.hpp"    // logger::kModifier
+#include "log_error.hpp"                // logger::error
+#include "log_utility.hpp"              // logger::ProcessVars, logger::StrToLen
 
 #define __FILENAME__ (strrchr("/" __FILE__, '/') + 1)
 
 namespace logger {
-   
-#ifndef FILE_LOG_HPP
-    
-    // @struct error
-    //
-    //
-    // @member message - std::string : string containing information about the error
-    //
-    // @constructor error(const char*) : construct object from const C-string
-    // @constructor error(std::string) : construct object from std::string
-    //
-    //
-    // @method what()
-    //     @return const char*
-    //
-    //     return null terminating string containing information about the error
-    //
-    //
-    // structure for holding errors that ConsoleLog throws
-    
-    struct error : std::exception {
-        
-        error(){}
-        error(const char* s)    : message_(s) {}
-        error(std::string s)  : message_(std::move(s)) {}
-        
-        virtual const char* what() const noexcept override { return message_.c_str(); }
-        
-        void push(const char* path, const char* func, int line) {
-            error_stack_.push(std::string(path) + ':' + std::string(func) + ':' + std::to_string(line));
-        }
-        
-        std::stack<std::string> error_stack_;
-        std::string             message_;
-        
-    };
-    
-#endif
-    
-    
-    
-    
     
     // @struct style
     //
@@ -170,84 +128,6 @@ namespace logger {
     
     
     
-    
-#ifndef FILE_LOG_HPP
-    
-    // @function StrToLen(a,b,c)
-    //
-    //
-    // @param a - std::string&& : target string
-    // @param b - size_t        : target length
-    // @param c - char          : fill character
-    //
-    // @return std::string
-    //
-    //
-    // move string @a and add (@b - Length(@a)) symbols that equals @c to the front
-    // if Length(@a) is at least @b, return @a without changes
-    
-    std::string StrToLen(std::string&&, size_t, char);
-    
-    
-    
-    
-    // @function ProcessVars(queue)
-    //
-    //
-    // @param queue - std::queue<std::string>   : queue with processed variables
-    //
-    // @return void
-    //
-    // Does nothing
-    
-    void ProcessVars(std::queue<std::string>&);
-    
-    
-    
-    
-    
-    // template<T>
-    // @function ProcessVars(queue,var)
-    //
-    //
-    // @param queue - std::queue<std::string>   : queue with processed variables
-    // @param var   - T                         : current processed value
-    //
-    // @return void
-    //
-    // create a stringstream and pass @var to it
-    // then push string to the @queue
-    
-    template <class T>
-    void ProcessVars(std::queue<std::string>&, T);
-    
-    
-    
-    
-    
-    // template<T>
-    // @function ProcessVars(queue,var,args)
-    //
-    //
-    // @param queue - std::queue<std::string>   : queue with processed variables
-    // @param var   - T                         : current processed value
-    // @param args  - pack                      : variables
-    //
-    // @return void
-    //
-    // create a stringstream and pass @var to it
-    // then push string to the @queue
-    // pass args recursively
-    
-    template <class T, class ...Args>
-    void ProcessVars(std::queue<std::string>&, T, Args...);
-    
-#endif
-    
-    
-    
-    
-    
     // @function ConsoleLog(default args, s, args)
     //
     //
@@ -327,72 +207,6 @@ logger::error logger::Trace(logger::error&& error, const char* path, const char*
     
     return error;
 }
-
-
-
-
-#ifndef FILE_LOG_HPP
-
-// @Implementation of
-//  logger::StrToLen
-
-std::string logger::StrToLen(std::string &&s, size_t len, char fill) {
-    
-    if(s.length() >= len) return std::move(s);
-    
-    s.insert(0,len - s.length(),fill);
-    
-    return std::move(s);
-
-}
-
-
-
-
-// @Implementation of
-//  logger::ProcessVars
-
-void logger::ProcessVars(std::queue<std::string>& queue) {
-    
-}
-
-
-
-
-// @Implementation of
-//  logger::ProcessVars
-
-template <class T>
-void logger::ProcessVars(std::queue<std::string>& queue, T var) {
-    
-    std::stringstream ss;
-    
-    ss << var;
-    
-    queue.push(ss.str()); // copy elision
-    
-}
-
-
-
-
-// @Implementation of
-//  logger::ProcessVars
-
-template <class T, class ...Args>
-void logger::ProcessVars(std::queue<std::string>& queue, T var, Args... args) {
-    
-    std::stringstream ss;
-    
-    ss << var;
-    
-    queue.push(ss.str()); // copy elision
-    
-    ProcessVars(queue,args...);
-    
-}
-
-#endif
 
 
 
@@ -588,14 +402,17 @@ bool logger::ConsoleLog(const char*, const char*, int, const char*, logger::erro
     
 };
 
-
-
-
 // Macro that pass to the logger::ConsoleLog additional info about place where it has been called
 #define ConsoleLog(...) logger::ConsoleLog(__FILE__,__FILENAME__,__LINE__,__func__ ,__VA_ARGS__)
 
 // Macro that pass to the logger::Trace additional info about place where it has been called
 #define Trace(x) logger::Trace(x,__FILE__,__func__,__LINE__)
 
+// DEBUG ONLY mode
+#ifdef DEBUG_ONLY
+    #if defined(DEBUG) | defined(_DEBUG)
+        #define ConsoleLog(...) 
+    #endif
+#endif
 
 #endif /* LOG_HPP */

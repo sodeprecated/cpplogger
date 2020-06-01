@@ -20,8 +20,8 @@
 //OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //SOFTWARE.
 
-#ifndef CONSOLE_MODIFIERS_HPP
-#define CONSOLE_MODIFIERS_HPP
+#ifndef LOG_CONSOLE_MODIFIERS_HPP
+#define LOG_CONSOLE_MODIFIERS_HPP
 
 #include <sstream>  // std::stringstream
 #include <vector>   // std::vector
@@ -95,9 +95,6 @@ namespace logger {
         return os;
     }
     
-    
-    
 };
 
-
-#endif /* CONSOLE_MODIFIERS_HPP */
+#endif /* LOG_CONSOLE_MODIFIERS_HPP */
