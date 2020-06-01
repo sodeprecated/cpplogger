@@ -9,6 +9,8 @@ __cpplogger__ will bring new colors to your life! Make simple console output mor
 
 ### Getting started:
 
+Just include one `log.hpp` that you can find in `release` folder on github.
+
 #### Namespace:
 * __cpplogger__ works in `logger::` namespace
 
