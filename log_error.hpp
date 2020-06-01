@@ -49,6 +49,7 @@ namespace logger {
     //
     //      Pushes information to the error stack
     //
+    //
     // structure for holding errors that ConsoleLog throws
     
     struct error : std::exception {

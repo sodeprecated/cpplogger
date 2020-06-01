@@ -41,6 +41,14 @@
 
 #define __FILENAME__ (strrchr("/" __FILE__, '/') + 1)
 
+#if defined(_WIN32) | defined(_WIN64)
+#include <windows.h>                    //  DWORD, HANDLE, GetStdHandle, GetConsoleMode, SetConsoleMode
+#define ENABLE_VIRTUAL_TERMINAL_PROCESSING 0x0004
+#define OS_WIN
+#else
+#define OS_UNIX
+#endif
+
 namespace logger {
     
     // @struct style
@@ -83,6 +91,7 @@ namespace logger {
     //
     // @return bool
     //
+    //
     // set correspondence between style and it name and return true if everything fine and false otherwise
     
     template <class ...Args>
@@ -101,6 +110,7 @@ namespace logger {
     //
     // @return logger::error&
     //
+    //
     // Push to error's stack information about current place
     // and then return error
     
@@ -118,6 +128,7 @@ namespace logger {
     // @param line  - int            : line number
     //
     // @return logger::error
+    //
     //
     // Creates new error
     // push to error's stack information about current place
@@ -165,6 +176,25 @@ namespace logger {
     // return true if everything ok and false if there were errors with console output
     
     bool ConsoleLog(const char*, const char*, int, const char*, error&);
+    
+    
+    
+    
+#ifdef OS_WIN
+    // @function EnableWindowsAnsiEscapeSequence()
+    //
+    //
+    // @return void
+    //
+    // @throw logger::error
+    //
+    //
+    // enables ansi escape sequence on windows platform
+    // throws logger::error if there were errors
+    // with windows console
+    
+    void EnableWindowsAnsiEscapeSequence();
+#endif
     
 }
 
@@ -401,6 +431,37 @@ bool logger::ConsoleLog(const char*, const char*, int, const char*, logger::erro
     return std::cout.good();
     
 };
+
+
+
+
+#ifdef OS_WIN
+// @Implementation of
+//  logger::EnableWindowsAnsiEscapeSequence
+
+void logger::EnableWindowsAnsiEscapeSequence() {
+    
+    // Set output mode to handle virtual terminal sequences
+    HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+    if (hOut == INVALID_HANDLE_VALUE)
+    {
+        throw logger::error("cannot enable ansi escape sequence");
+    }
+    
+    DWORD dwMode = 0;
+    if (!GetConsoleMode(hOut, &dwMode))
+    {
+        throw logger::error("cannot enable ansi escape sequence");
+    }
+    
+    dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+    if (!SetConsoleMode(hOut, dwMode))
+    {
+        throw logger::error("cannot enable ansi escape sequence");
+    }
+    
+}
+#endif
 
 // Macro that pass to the logger::ConsoleLog additional info about place where it has been called
 #define ConsoleLog(...) logger::ConsoleLog(__FILE__,__FILENAME__,__LINE__,__func__ ,__VA_ARGS__)

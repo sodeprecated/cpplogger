@@ -31,12 +31,11 @@
 #include <fstream>                  // std::ofstream
 
 #if defined(_WIN32) | defined(_WIN64)
-#include <windows.h>                //
+#include <windows.h>                // WIN32_FIND_DATA, HANDLE, CreateDirectory
 #define OS_WIN
 #else
-#include <sys/types.h>              //
-#include <sys/stat.h>               //
-#include <unistd.h>                 //
+#include <sys/stat.h>               // stat
+#include <unistd.h>                 // mkdir
 #define OS_UNIX
 #endif
 

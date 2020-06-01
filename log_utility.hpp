@@ -56,6 +56,7 @@ namespace logger {
     //
     // @return void
     //
+    //
     // Does nothing
     
     void ProcessVars(std::queue<std::string>&);
@@ -72,6 +73,7 @@ namespace logger {
     // @param var   - T                         : current processed value
     //
     // @return void
+    //
     //
     // create a stringstream and pass @var to it
     // then push string to the @queue
@@ -92,6 +94,7 @@ namespace logger {
     // @param args  - pack                      : variables
     //
     // @return void
+    //
     //
     // create a stringstream and pass @var to it
     // then push string to the @queue
