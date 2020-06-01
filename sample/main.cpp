@@ -21,7 +21,7 @@ int main() {
     
     logger::BindConsoleStyle("Blink", logger::SLOW_BLINK);
     
-    logger::BindLogDirectory("./boo/");
+    logger::BindLogDirectory("./");
     
     try {
         FunctionThatTrowsError();
