@@ -1,7 +1,7 @@
 # Use the latest 2.1 version of CircleCI pipeline process engine. See: https://circleci.com/docs/2.0/configuration-reference
 version: 2.1
 jobs:
-  build_gcc_earlier:
+  build_cpp_11:
     docker:
       - image: gcc:6
     steps:
@@ -9,15 +9,15 @@ jobs:
       - run: mkdir -p build && cd build
       - run: g++ -o main sample/main.cpp -std=c++11
       - run: ./main
-  build_gcc_6:
+  build_cpp_17:
     docker:
       - image: gcc:6
     steps:
       - checkout
       - run: mkdir -p build && cd build
-      - run: g++ -o main sample/main.cpp -std=c++14
+      - run: g++ -o main sample/main.cpp -std=c++17
       - run: ./main
-  build_gcc_latest:
+  build_cpp_20:
     docker:
       - image: gcc:latest
     steps:
@@ -30,7 +30,7 @@ workflows:
   version: 2
   build_and_test:
     jobs:
-      - build_gcc_earlier
-      - build_gcc_6
-      - build_gcc_latest
+      - build_cpp_11
+      - build_cpp_17
+      - build_cpp_20
     
